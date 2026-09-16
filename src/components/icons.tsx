@@ -2,6 +2,8 @@ import {
   ArrowLeft,
   ArrowRight,
   BriefcaseBusiness,
+  Bell,
+  BookOpenText,
   CalendarClock,
   Check,
   CheckCircle2,
@@ -19,6 +21,7 @@ import {
   Search,
   Snowflake,
   Sparkles,
+  Trophy,
   ThermometerSun,
   UserRound,
   UsersRound,
@@ -26,7 +29,7 @@ import {
 } from "lucide-react";
 
 export {
-  ArrowLeft, ArrowRight, BriefcaseBusiness, CalendarClock, Check, CheckCircle2, ChevronRight,
+  ArrowLeft, ArrowRight, Bell, BookOpenText, BriefcaseBusiness, CalendarClock, Check, CheckCircle2, ChevronRight,
   CircleDollarSign, Clock3, Flame, LayoutDashboard, ListTodo, LogOut, Menu, MessageCircle,
-  Phone, Plus, Search, Snowflake, Sparkles, ThermometerSun, UserRound, UsersRound, X,
+  Phone, Plus, Search, Snowflake, Sparkles, ThermometerSun, Trophy, UserRound, UsersRound, X,
 };

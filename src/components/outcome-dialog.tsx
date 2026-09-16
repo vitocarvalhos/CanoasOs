@@ -13,23 +13,23 @@ export function OutcomeDialog({ taskId, leadId }: { taskId: string; leadId: stri
   const [open, setOpen] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | "">("");
   const [nextTitle, setNextTitle] = useState("");
-  const [nextDueAt, setNextDueAt] = useState("");
+  const [nextDate, setNextDate] = useState("");
+  const [nextTime, setNextTime] = useState("");
   const boundAction = completeTaskAction.bind(null, taskId, leadId);
   const [state, formAction, pending] = useActionState(boundAction, initialActionState);
   const terminal = outcome === "not_interested" || outcome === "sale";
 
   useEffect(() => {
-    if (state.success) {
-      setOpen(false);
-      router.refresh();
-    }
+    if (state.success) router.refresh();
   }, [state.success, router]);
 
   function choose(value: Outcome) {
     const item = outcomes.find((candidate) => candidate.value === value)!;
     setOutcome(value);
     setNextTitle(item.nextTitle);
-    setNextDueAt(item.days ? defaultLocalDateTime(item.days) : "");
+    const [date, time] = item.days ? defaultLocalDateTime(item.days).split("T") : ["", ""];
+    setNextDate(date);
+    setNextTime(time);
   }
 
   return (
@@ -62,10 +62,8 @@ export function OutcomeDialog({ taskId, leadId }: { taskId: string; leadId: stri
                     <label className="label" htmlFor={`next-title-${taskId}`}>Próxima ação</label>
                     <input id={`next-title-${taskId}`} className="field" name="next_title" value={nextTitle} onChange={(event) => setNextTitle(event.target.value)} required />
                   </div>
-                  <div>
-                    <label className="label" htmlFor={`next-date-${taskId}`}>Data e hora</label>
-                    <input id={`next-date-${taskId}`} className="field" name="next_due_at" type="datetime-local" value={nextDueAt} onChange={(event) => setNextDueAt(event.target.value)} required />
-                  </div>
+                  <div><label className="label" htmlFor={`next-date-${taskId}`}>Data</label><input id={`next-date-${taskId}`} className="field" name="next_due_date" type="date" value={nextDate} onChange={(event) => setNextDate(event.target.value)} required /></div>
+                  <div><label className="label" htmlFor={`next-time-${taskId}`}>Horário</label><input id={`next-time-${taskId}`} className="field" name="next_due_time" type="time" value={nextTime} onChange={(event) => setNextTime(event.target.value)} required /><p className="mt-2 text-xs text-slate-600">America/Sao_Paulo</p></div>
                 </div>
               )}
 
@@ -76,6 +74,7 @@ export function OutcomeDialog({ taskId, leadId }: { taskId: string; leadId: stri
                 </div>
               )}
               {state.error && <p role="alert" className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">{state.error}</p>}
+              {state.success && <p role="status" className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{state.success}</p>}
               <button className="primary-button mt-6 w-full" disabled={!outcome || pending}>{pending ? "Salvando…" : "Confirmar conclusão"}</button>
             </form>
           </div>

@@ -2,8 +2,12 @@ import { Suspense } from "react";
 import { LogOut } from "@/components/icons";
 import { NavLink } from "@/components/nav-link";
 import { signOutAction } from "@/app/(app)/actions";
+import { ActionCenter } from "@/components/action-center";
+import { FocusRefresh } from "@/components/focus-refresh";
 
-export function AppShell({ children, email, name }: { children: React.ReactNode; email: string; name: string }) {
+type ActionSummary = { overdue: number; today: number; tasks: { id: string; leadId: string; leadName: string; title: string; dueAt: string; overdue: boolean }[] };
+
+export function AppShell({ children, email, name, actionSummary }: { children: React.ReactNode; email: string; name: string; actionSummary: ActionSummary }) {
   return (
     <div className="min-h-screen md:grid md:grid-cols-[230px_1fr]">
       <aside className="sticky top-0 z-30 flex h-16 items-center border-b border-white/10 bg-[#080a0e]/95 px-4 backdrop-blur md:h-screen md:flex-col md:items-stretch md:border-b-0 md:border-r md:px-4 md:py-5">
@@ -14,11 +18,14 @@ export function AppShell({ children, email, name }: { children: React.ReactNode;
             <p className="mt-1 text-[10px] uppercase tracking-[.16em] text-slate-500">Sales OS</p>
           </div>
         </div>
-        <nav className="ml-auto flex gap-1 md:ml-0 md:mt-9 md:flex-col">
+        <nav className="ml-auto flex max-w-[65vw] gap-1 overflow-x-auto md:ml-0 md:mt-9 md:max-w-none md:flex-col md:overflow-visible">
           <Suspense fallback={null}>
             <NavLink href="/today" label="Hoje" icon="today" />
             <NavLink href="/pipeline" label="Pipeline" icon="pipeline" />
             <NavLink href="/leads" label="Leads" icon="leads" />
+            <NavLink href="/agenda" label="Agenda" icon="agenda" />
+            <NavLink href="/playbook" label="Playbook" icon="playbook" />
+            <NavLink href="/dicas" label="Dicas" icon="tips" />
           </Suspense>
         </nav>
         <div className="mt-auto hidden border-t border-white/10 pt-4 md:block">
@@ -29,7 +36,11 @@ export function AppShell({ children, email, name }: { children: React.ReactNode;
           </form>
         </div>
       </aside>
-      <main className="min-w-0 px-4 py-7 sm:px-7 lg:px-10 lg:py-9">{children}</main>
+      <main className="min-w-0 px-4 py-7 sm:px-7 lg:px-10 lg:py-9">
+        <FocusRefresh />
+        <div className="mb-5 flex justify-end"><ActionCenter {...actionSummary} /></div>
+        {children}
+      </main>
     </div>
   );
 }

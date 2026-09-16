@@ -2,25 +2,24 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { todayBounds, formatDateTime } from "@/lib/format";
 import { whatsappUrl } from "@/lib/crm";
-import type { Lead, Task } from "@/lib/database.types";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { OutcomeDialog } from "@/components/outcome-dialog";
 import { CalendarClock, ChevronRight, Clock3, Flame, MessageCircle, Phone, Plus } from "@/components/icons";
 import { TemperatureBadge } from "@/components/status";
-
-type TaskWithLead = Task & { leads: Pick<Lead, "id" | "name" | "company" | "whatsapp" | "notes" | "temperature" | "stage"> };
+import { getActionQueue } from "@/lib/action-queue";
+import { getGamification } from "@/lib/gamification";
 
 export const metadata = { title: "Hoje" };
 
 export default async function TodayPage() {
   const supabase = await createClient();
   const { start, end } = todayBounds();
-  const [{ data: tasks }, { count: hotCount }] = await Promise.all([
-    supabase.from("tasks").select("*, leads!inner(id,name,company,whatsapp,notes,temperature,stage)").is("completed_at", null).lt("due_at", end).order("due_at", { ascending: true }),
-    supabase.from("leads").select("id", { count: "exact", head: true }).eq("temperature", "hot").not("stage", "in", "(won,lost)"),
+  const [queue, { count: hotCount }, game] = await Promise.all([
+    getActionQueue(supabase, { before: end }),
+    supabase.from("leads").select("id", { count: "exact", head: true }).eq("temperature", "hot").is("archived_at", null).not("stage", "in", "(won,lost)"),
+    getGamification(supabase),
   ]);
-  const queue = (tasks ?? []) as TaskWithLead[];
   const overdue = queue.filter((task) => task.due_at < start);
   const today = queue.filter((task) => task.due_at >= start);
   const next = queue[0];
@@ -33,6 +32,10 @@ export default async function TodayPage() {
         <Metric label="Atrasadas" value={overdue.length} icon={<Clock3 size={18} />} tone="danger" />
         <Metric label="Para hoje" value={today.length} icon={<CalendarClock size={18} />} />
         <Metric label="Oportunidades quentes" value={hotCount ?? 0} icon={<Flame size={18} />} tone="hot" />
+      </section>
+      <section className="mb-6 grid gap-4 rounded-2xl border border-blue-400/20 bg-blue-500/[.05] p-5 lg:grid-cols-[180px_1fr]">
+        <div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-blue-300">Progresso do dia</p><p className="mt-3 text-3xl font-semibold">{game.xp} XP</p><p className="mt-1 text-xs text-slate-500">{game.streak} dia(s) de sequência</p></div>
+        <div className="grid gap-3 sm:grid-cols-3">{game.missions.map((mission) => <div key={mission.label} className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs font-semibold">{mission.label}</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-blue-400" style={{ width: `${mission.progress / mission.target * 100}%` }} /></div><p className="mt-2 text-[10px] text-slate-500">{mission.progress}/{mission.target}</p></div>)}</div>
       </section>
 
       {!next ? (

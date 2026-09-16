@@ -7,19 +7,22 @@ import { ArrowLeft, CalendarClock, MessageCircle, Phone } from "@/components/ico
 import { OutcomeDialog } from "@/components/outcome-dialog";
 import { StageBadge, TemperatureBadge } from "@/components/status";
 import { LeadDetailsForm, NextTaskForm, NoteForm } from "./lead-details-form";
+import { initialCatalogOptions } from "@/lib/crm";
 
 export const metadata = { title: "Ficha do lead" };
 
 export default async function LeadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: lead }, { data: tasks }, { data: activities }] = await Promise.all([
+  const [{ data: lead }, { data: tasks }, { data: activities }, { data: catalogRows }] = await Promise.all([
     supabase.from("leads").select("*").eq("id", id).maybeSingle(),
     supabase.from("tasks").select("*").eq("lead_id", id).order("due_at", { ascending: true }),
     supabase.from("activities").select("*").eq("lead_id", id).order("created_at", { ascending: false }),
+    supabase.from("catalog_options").select("category,label").eq("active", true).order("label"),
   ]);
   if (!lead) notFound();
   const nextTask = tasks?.find((task) => !task.completed_at);
+  const catalogs = Object.fromEntries(Object.entries(initialCatalogOptions).map(([category, defaults]) => [category, Array.from(new Set([...defaults, ...(catalogRows?.filter((item) => item.category === category).map((item) => item.label) ?? [])]))])) as typeof initialCatalogOptions;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -49,7 +52,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
             </div>
           </section>
 
-          <LeadDetailsForm lead={lead} />
+          <LeadDetailsForm lead={lead} catalogs={catalogs} />
 
           <section className="panel p-5 sm:p-7">
             <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Timeline</h2><span className="text-xs text-slate-600">{activities?.length ?? 0} registros</span></div>
@@ -76,7 +79,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                 <div className="mt-6"><OutcomeDialog taskId={nextTask.id} leadId={lead.id} /></div>
               </>
             ) : (
-              <><h2 className="mt-5 text-lg font-semibold">Sem próxima ação</h2><p className="mt-2 text-sm leading-6 text-slate-500">Crie uma tarefa para devolver este lead à fila de execução.</p><NextTaskForm leadId={lead.id} /></>
+              <><h2 className="mt-5 text-lg font-semibold">Sem próxima ação</h2><p className="mt-2 text-sm leading-6 text-slate-500">Crie uma tarefa para devolver este lead à fila de execução.</p><NextTaskForm leadId={lead.id} actionOptions={catalogs.action_type} /></>
             )}
           </section>
         </aside>

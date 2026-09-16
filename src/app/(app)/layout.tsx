@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/app-shell";
+import { getActionQueue } from "@/lib/action-queue";
+import { todayBounds } from "@/lib/format";
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -15,5 +17,12 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     profile = createdProfile;
   }
   const name = profile?.full_name || email.split("@")[0];
-  return <AppShell email={email} name={name}>{children}</AppShell>;
+  const { start, end } = todayBounds();
+  const queue = await getActionQueue(supabase, { before: end });
+  const actionSummary = {
+    overdue: queue.filter((task) => task.due_at < start).length,
+    today: queue.filter((task) => task.due_at >= start).length,
+    tasks: queue.slice(0, 12).map((task) => ({ id: task.id, leadId: task.lead_id, leadName: task.leads.name, title: task.title, dueAt: task.due_at, overdue: task.due_at < start })),
+  };
+  return <AppShell email={email} name={name} actionSummary={actionSummary}>{children}</AppShell>;
 }

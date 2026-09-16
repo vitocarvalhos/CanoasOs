@@ -4,8 +4,11 @@ import { useActionState, type InputHTMLAttributes } from "react";
 import { createLeadAction } from "@/app/(app)/actions";
 import { initialActionState } from "@/lib/action-state";
 import { stageOptions, temperatureLabels } from "@/lib/crm";
+import type { CatalogCategory } from "@/lib/crm";
+import { CatalogInput } from "@/components/catalog-input";
+import { DateTimeFields } from "@/components/date-time-fields";
 
-export function NewLeadForm() {
+export function NewLeadForm({ catalogs }: { catalogs: Record<CatalogCategory, string[]> }) {
   const [state, formAction, pending] = useActionState(createLeadAction, initialActionState);
   return (
     <form action={formAction} className="space-y-5">
@@ -15,9 +18,9 @@ export function NewLeadForm() {
           <Field label="Nome *" name="name" required />
           <Field label="Empresa" name="company" />
           <Field label="WhatsApp" name="whatsapp" type="tel" placeholder="(11) 99999-9999" />
-          <Field label="Nicho" name="niche" placeholder="Ex.: barbearia" />
-          <Field label="Origem" name="source" placeholder="Ex.: Google Maps" />
-          <Field label="Serviço de interesse" name="service_interest" placeholder="Ex.: site + automação" />
+          <CatalogInput label="Nicho" name="niche" options={catalogs.niche} placeholder="Busque ou crie uma opção" />
+          <CatalogInput label="Origem" name="source" options={catalogs.source} placeholder="Busque ou crie uma opção" />
+          <CatalogInput label="Serviço de interesse" name="service_interest" options={catalogs.service_interest} placeholder="Busque ou crie uma opção" />
           <Field label="Valor potencial" name="potential_value" type="number" min="0" step="0.01" placeholder="1500" />
           <div><label className="label" htmlFor="temperature">Temperatura</label><select className="field" id="temperature" name="temperature" defaultValue="cold">{Object.entries(temperatureLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
           <div><label className="label" htmlFor="stage">Estágio inicial</label><select className="field" id="stage" name="stage" defaultValue="new">{stageOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
@@ -38,8 +41,8 @@ export function NewLeadForm() {
         <h2 className="mt-2 text-lg font-semibold">Primeira próxima ação</h2>
         <p className="mt-2 text-sm text-slate-500">Sem isso o lead não entra no pipeline.</p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Field label="O que fazer? *" name="task_title" placeholder="Ex.: primeiro contato no WhatsApp" required />
-          <Field label="Quando? *" name="due_at" type="datetime-local" required />
+          <CatalogInput label="O que fazer? *" name="task_title" options={catalogs.action_type} placeholder="Busque ou crie um tipo de ação" required />
+          <DateTimeFields />
         </div>
       </section>
       {state.error && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">{state.error}</p>}

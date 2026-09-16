@@ -5,8 +5,11 @@ import type { Lead } from "@/lib/database.types";
 import { addNoteAction, createTaskAction, updateLeadAction } from "@/app/(app)/actions";
 import { initialActionState } from "@/lib/action-state";
 import { stageOptions, temperatureLabels } from "@/lib/crm";
+import type { CatalogCategory } from "@/lib/crm";
+import { CatalogInput } from "@/components/catalog-input";
+import { DateTimeFields } from "@/components/date-time-fields";
 
-export function LeadDetailsForm({ lead }: { lead: Lead }) {
+export function LeadDetailsForm({ lead, catalogs }: { lead: Lead; catalogs: Record<CatalogCategory, string[]> }) {
   const action = updateLeadAction.bind(null, lead.id);
   const [state, formAction, pending] = useActionState(action, initialActionState);
   return (
@@ -16,7 +19,9 @@ export function LeadDetailsForm({ lead }: { lead: Lead }) {
         <Field label="Nome" name="name" defaultValue={lead.name} required />
         <Field label="Empresa" name="company" defaultValue={lead.company ?? ""} />
         <Field label="WhatsApp" name="whatsapp" defaultValue={lead.whatsapp ?? ""} />
-        <Field label="Serviço" name="service_interest" defaultValue={lead.service_interest ?? ""} />
+        <CatalogInput label="Nicho" name="niche" options={catalogs.niche} defaultValue={lead.niche ?? ""} />
+        <CatalogInput label="Origem" name="source" options={catalogs.source} defaultValue={lead.source ?? ""} />
+        <CatalogInput label="Serviço" name="service_interest" options={catalogs.service_interest} defaultValue={lead.service_interest ?? ""} />
         <Field label="Valor potencial" name="potential_value" type="number" defaultValue={String(lead.potential_value)} />
         <div><label className="label" htmlFor="stage">Estágio</label><select id="stage" name="stage" className="field" defaultValue={lead.stage}>{stageOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
         <div><label className="label" htmlFor="temperature">Temperatura</label><select id="temperature" name="temperature" className="field" defaultValue={lead.temperature}>{Object.entries(temperatureLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
@@ -47,13 +52,13 @@ export function NoteForm({ leadId }: { leadId: string }) {
   );
 }
 
-export function NextTaskForm({ leadId }: { leadId: string }) {
+export function NextTaskForm({ leadId, actionOptions }: { leadId: string; actionOptions: string[] }) {
   const action = createTaskAction.bind(null, leadId);
   const [state, formAction, pending] = useActionState(action, initialActionState);
   return (
     <form action={formAction} className="mt-5 space-y-3">
-      <div><label className="label" htmlFor="new-task-title">Próxima ação</label><input id="new-task-title" className="field" name="title" placeholder="Ex.: retomar contato" required /></div>
-      <div><label className="label" htmlFor="new-task-due">Data e hora</label><input id="new-task-due" className="field" name="due_at" type="datetime-local" required /></div>
+      <CatalogInput label="Próxima ação" name="title" options={actionOptions} placeholder="Busque ou crie uma ação" required />
+      <DateTimeFields />
       {state.error && <p className="text-xs text-red-300">{state.error}</p>}
       {state.success && <p className="text-xs text-emerald-300">{state.success}</p>}
       <button className="primary-button w-full" disabled={pending}>{pending ? "Criando…" : "Criar próxima ação"}</button>
